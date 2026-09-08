@@ -12,8 +12,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [newItemName, setNewItemName] = useState('')
+  const [newItemDescription, setNewItemDescription] = useState('')
 
-  // Load items from API
   const fetchItems = async () => {
     setLoading(true)
     setError(null)
@@ -31,8 +31,7 @@ function App() {
     }
   }
 
-  // Create new item
-  const createItem = async name => {
+  const createItem = async (name, description) => {
     setError(null)
     try {
       const response = await fetch(`${API_URL}/items`, {
@@ -40,7 +39,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, description }),
       })
 
       if (!response.ok) {
@@ -57,7 +56,6 @@ function App() {
     }
   }
 
-  // Delete item
   const deleteItem = async id => {
     setError(null)
     try {
@@ -72,11 +70,9 @@ function App() {
       setItems(prev => prev.filter(item => item.id !== id))
     } catch (err) {
       setError(err.message || 'Failed to delete item')
-      // Don't throw error further to avoid unhandled rejections
     }
   }
 
-  // Handle form submit
   const handleSubmit = async e => {
     e.preventDefault()
     if (!newItemName.trim()) {
@@ -85,14 +81,14 @@ function App() {
     }
 
     try {
-      await createItem(newItemName.trim())
+      await createItem(newItemName.trim(), newItemDescription.trim() || null)
       setNewItemName('')
+      setNewItemDescription('')
     } catch {
       // Error already set in createItem
     }
   }
 
-  // Load items on component mount
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
     fetchItems()
@@ -113,6 +109,13 @@ function App() {
               value={newItemName}
               onChange={e => setNewItemName(e.target.value)}
               placeholder="Enter item name"
+              disabled={loading}
+            />
+            <input
+              type="text"
+              value={newItemDescription}
+              onChange={e => setNewItemDescription(e.target.value)}
+              placeholder="Enter description (optional)"
               disabled={loading}
             />
             <button type="submit" disabled={loading || !newItemName.trim()}>
@@ -138,6 +141,7 @@ function App() {
               {items.map(item => (
                 <li key={item.id} className="item">
                   <span>{item.name}</span>
+                  {item.description && <span className="item-description"> — {item.description}</span>}
                   <button
                     onClick={() => {
                       if (window.confirm(`Delete "${item.name}"?`)) {
